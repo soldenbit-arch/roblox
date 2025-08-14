@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: order-management-app
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_VERSION
-        value: 18.17.0
+    name: roblox-login-bot
+    env: docker
+    plan: starter
+    region: oregon
     healthCheckPath: /
-    autoDeploy: true 
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    buildCommand: docker build -t roblox-login-bot .
+    startCommand: docker run -p $PORT:8000 roblox-login-bot 

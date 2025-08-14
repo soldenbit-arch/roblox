@@ -37,22 +37,9 @@ venv.bak/
 
 # OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Project specific
 cookies.txt
 *.log
-.env
-chromedriver.exe
-LICENSE.chromedriver
-THIRD_PARTY_NOTICES.chromedriver
-roblox_cookies_*.json
-
-# Temporary files
-temp/
-tmp/ 
+chromedriver.exe 
