@@ -1093,6 +1093,11 @@ def cloud_test_page():
     """Страница для тестирования облачного хостинга без Selenium"""
     return render_template('cloud-test.html')
 
+@app.route('/fixed-login')
+def fixed_login_page():
+    """Исправленная страница логина без localhost"""
+    return render_template('fixed-login.html')
+
 @app.route('/proxy-roblox', methods=['POST'])
 def proxy_roblox():
     """Прокси для обращения к Roblox API"""

