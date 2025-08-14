@@ -594,7 +594,7 @@ def login_page():
 
 @app.route('/test')
 def test_page():
-    return jsonify({'status': 'ok', 'message': 'Сервер работает!'})
+    return app.send_static_file('test.html')
 
 @app.route('/login', methods=['POST'])
 def login():

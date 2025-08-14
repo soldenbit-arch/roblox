@@ -45,7 +45,7 @@ body.rbx-body {
     outline: none;
     border-color: #00b06c;
 }
-.btn-primary-md, .login-button {
+.btn-primary-md, .login-button, .btn-full-width, .btn-secondary-md {
     width: 100%;
     padding: 12px 0;
     background: #00b06c;
@@ -93,6 +93,34 @@ body.rbx-body {
     background: #232527;
     color: #fff;
     font-size: 15px;
+}
+
+.result-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.result-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 @media (max-width: 480px) {
     .login-form-container {

@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In</title>
+    <title>Test Login</title>
     <link rel="stylesheet" href="/static/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="https://images.rbxcdn.com/e854eb7b2951ac03edba9a2681032bba.ico">
     <style>
         body { background: #232527; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="rbx-body dark-theme builder-font">
@@ -47,6 +45,27 @@
         </div>
     </div>
     
-    <script src="/static/js/custom-login.js"></script>
+    <script>
+        // Простой тест без fetch
+        document.addEventListener('DOMContentLoaded', function() {
+            var loginForm = document.getElementById('loginForm');
+            var codeForm = document.getElementById('codeForm');
+            var resultDiv = document.getElementById('result');
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Форма логина работает!';
+                resultDiv.className = 'result-message success';
+            });
+            
+            codeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Форма 2FA работает!';
+                resultDiv.className = 'result-message success';
+            });
+        });
+    </script>
 </body>
 </html> 
