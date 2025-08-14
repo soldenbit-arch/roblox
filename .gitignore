@@ -21,31 +21,38 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# Virtual environments
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-
-# Cookies
+# Project specific
 cookies.txt
-
-# Chrome driver (не загружаем на хостинг)
+*.log
+.env
 chromedriver.exe
 LICENSE.chromedriver
 THIRD_PARTY_NOTICES.chromedriver
+roblox_cookies_*.json
 
-# Environment variables
-.env 
+# Temporary files
+temp/
+tmp/ 

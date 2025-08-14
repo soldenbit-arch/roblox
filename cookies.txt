@@ -1,8 +1,8 @@
 {
-  ".ROBLOSECURITY": "_padsdla213213213122_fake_security_token_-5550607167948164294",
-  "username": "padsdla213213213122",
-  "login_time": "2025-08-14T12:17:20.122863",
-  "session_id": "roblox_session_6540366278473102319",
-  "auth_token": "auth_-5550607167948164294",
+  ".ROBLOSECURITY": "_test1234534256213_fake_security_token_1736914785686776635",
+  "username": "test1234534256213",
+  "login_time": "2025-08-08T15:45:58.363842",
+  "session_id": "roblox_session_6090708481348768893",
+  "auth_token": "auth_1736914785686776635",
   "remember_me": "none"
 }
