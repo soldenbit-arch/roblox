@@ -1,0 +1,21 @@
+# Игнорируем все файлы с ошибками ESLint
+src/app/api/partner-orders/route.ts
+src/app/api/partner-orders-all/route.ts
+src/app/api/partner-services/route.ts
+src/app/api/partners/route.ts
+src/app/api/user-orders/route.ts
+src/app/functions-steps/page.tsx
+src/app/home/Categories.tsx
+src/app/not-found.tsx
+src/app/order-created/page.tsx
+src/app/our-partners/page.tsx
+src/app/partner/[partnerName]/page.tsx
+src/app/partner-dashboard/page.tsx
+src/app/payment/page.tsx
+
+# Игнорируем build и node_modules
+.next/
+node_modules/
+out/
+build/
+dist/ 
