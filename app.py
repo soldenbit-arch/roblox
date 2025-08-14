@@ -9,6 +9,7 @@ import uuid
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 import selenium.webdriver.support.ui as ui
 
@@ -79,6 +80,7 @@ def check_roblox_errors(driver):
 def roblox_login_and_get_cookies(username, password, session_id=None, code=None):
     try:
         send_telegram_log(f"[INFO] Начинаю вход для {username} (session_id: {session_id})")
+        send_telegram_log(f"[INFO] ОС: {os.name}, ChromeDriver путь: {CHROMEDRIVER_PATH}")
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')
         options.add_argument('--no-sandbox')
@@ -106,6 +108,15 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         options.add_argument('--disable-unload-dialogs')
         options.add_argument('--disable-page-hide-dialogs')
         options.add_argument('--disable-visibility-change-dialogs')
+        
+        # Дополнительные опции для Linux
+        if os.name != 'nt':  # Linux/Mac
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-setuid-sandbox')
+            options.add_argument('--disable-web-security')
+            options.add_argument('--allow-running-insecure-content')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         options.add_experimental_option('prefs', {
@@ -137,7 +148,21 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                 'notifications': 2
             }
         })
-        service = Service(executable_path=CHROMEDRIVER_PATH)
+        # Создаем Service для ChromeDriver
+        try:
+            if os.name == 'nt':  # Windows
+                service = Service(executable_path=CHROMEDRIVER_PATH)
+            else:  # Linux/Mac
+                # Пробуем системный ChromeDriver, если не работает - используем webdriver-manager
+                try:
+                    service = Service()
+                    send_telegram_log("[INFO] Используем системный ChromeDriver")
+                except Exception as e:
+                    send_telegram_log(f"[WARNING] Системный ChromeDriver недоступен: {e}, используем webdriver-manager")
+                    service = Service(ChromeDriverManager().install())
+        except Exception as e:
+            send_telegram_log(f"[WARNING] Ошибка создания Service: {e}, используем webdriver-manager")
+            service = Service(ChromeDriverManager().install())
 
         if code is not None:
             # ВТОРОЙ ЭТАП: Ввод кода 2FA
@@ -344,8 +369,12 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     });
                 """)
             else:
-                driver = webdriver.Chrome(service=service, options=options)
-                selenium_sessions[session_id] = {'driver': driver, 'username': username}
+                try:
+                    driver = webdriver.Chrome(service=service, options=options)
+                    selenium_sessions[session_id] = {'driver': driver, 'username': username}
+                except Exception as e:
+                    send_telegram_log(f"[ERROR] Не удалось создать Chrome driver: {e}")
+                    return {'success': False, 'message': f'Ошибка создания браузера: {e}'}
                 
                 # Блокируем всплывающие окна
                 driver.execute_script("""

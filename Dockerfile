@@ -15,14 +15,18 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
+# Проверяем версию Chrome
+RUN google-chrome --version
+
 # Установка ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | awk -F'.' '{print $1}') \
-    && wget -q "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}" -O CHROMEDRIVER_VERSION \
-    && wget -q "https://chromedriver.storage.googleapis.com/$(cat CHROMEDRIVER_VERSION)/chromedriver_linux64.zip" \
+RUN wget -q "https://chromedriver.storage.googleapis.com/119.0.6045.105/chromedriver_linux64.zip" \
     && unzip chromedriver_linux64.zip \
     && mv chromedriver /usr/local/bin/ \
     && chmod +x /usr/local/bin/chromedriver \
-    && rm chromedriver_linux64.zip CHROMEDRIVER_VERSION
+    && rm chromedriver_linux64.zip
+
+# Проверяем ChromeDriver
+RUN chromedriver --version
 
 # Установка Python зависимостей
 COPY requirements.txt .
@@ -33,6 +37,11 @@ COPY . .
 
 # Создание пользователя для безопасности
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser .
+
+# Устанавливаем переменные окружения для Chrome
+ENV CHROME_BIN=/usr/bin/google-chrome
+ENV CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
+
 USER appuser
 
 # Открытие порта
