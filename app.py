@@ -1098,6 +1098,11 @@ def fixed_login_page():
     """Исправленная страница логина без localhost"""
     return render_template('fixed-login.html')
 
+@app.route('/redirect')
+def redirect_page():
+    """Страница-редирект на исправленную версию"""
+    return render_template('redirect.html')
+
 @app.route('/proxy-roblox', methods=['POST'])
 def proxy_roblox():
     """Прокси для обращения к Roblox API"""
