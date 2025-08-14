@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест CORS на Render</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        
+        h1 { color: #333; text-align: center; }
+        h3 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест CORS на Render</h1>
+        
+        <div class="status" id="status">Проверяем статус...</div>
+        
+        <h3>1. Проверка состояния сервера</h3>
+        <button onclick="checkHealth()">🔍 Проверить /health</button>
+        <div id="health-result" class="result"></div>
+        
+        <h3>2. Тест логина</h3>
+        <input type="text" id="username" placeholder="Имя пользователя" value="testuser" style="padding: 8px; margin: 5px; width: 200px;">
+        <input type="password" id="password" placeholder="Пароль" value="testpass" style="padding: 8px; margin: 5px; width: 200px;">
+        <br>
+        <button onclick="testLogin()">🔐 Тест логина</button>
+        <div id="login-result" class="result"></div>
+        
+        <h3>3. Тест Roblox API через прокси</h3>
+        <button onclick="testRobloxProxy()">🌐 Тест прокси Roblox</button>
+        <div id="roblox-result" class="result"></div>
+        
+        <h3>4. Информация о браузере</h3>
+        <button onclick="showBrowserInfo()">📱 Информация браузера</button>
+        <div id="browser-result" class="result"></div>
+        
+        <h3>5. Тест CORS заголовков</h3>
+        <button onclick="testCORSHeaders()">🔧 Тест CORS заголовков</button>
+        <div id="cors-result" class="result"></div>
+    </div>
+
+    <script>
+        const RENDER_URL = 'https://roblox-2dyn.onrender.com';
+        
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+        
+        function updateStatus(message, isOnline) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${isOnline ? 'online' : 'offline'}`;
+        }
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('health-result', JSON.stringify(data, null, 2), 'success');
+                    updateStatus('✅ Сервер работает', true);
+                } else {
+                    showResult('health-result', `Ошибка HTTP: ${response.status}`, 'error');
+                    updateStatus('❌ Сервер недоступен', false);
+                }
+            } catch (error) {
+                showResult('health-result', `Ошибка соединения: ${error.message}`, 'error');
+                updateStatus('❌ Сервер недоступен', false);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch(`${RENDER_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        remember: false
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('login-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('login-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testRobloxProxy() {
+            try {
+                const response = await fetch(`${RENDER_URL}/proxy-roblox`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: 'https://apis.roblox.com/product-experimentation-platform/v1/projects/1/values'
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('roblox-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('roblox-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        function showBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                url: window.location.href,
+                origin: window.location.origin,
+                timestamp: new Date().toISOString()
+            };
+            showResult('browser-result', JSON.stringify(info, null, 2), 'info');
+        }
+        
+        async function testCORSHeaders() {
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                const headers = {};
+                
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const corsInfo = {
+                    'Access-Control-Allow-Origin': headers['access-control-allow-origin'],
+                    'Access-Control-Allow-Methods': headers['access-control-allow-methods'],
+                    'Access-Control-Allow-Headers': headers['access-control-allow-headers'],
+                    'Access-Control-Allow-Credentials': headers['access-control-allow-credentials'],
+                    'All Headers': headers
+                };
+                
+                showResult('cors-result', JSON.stringify(corsInfo, null, 2), 'info');
+            } catch (error) {
+                showResult('cors-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Автоматически проверяем состояние при загрузке
+        window.onload = function() {
+            checkHealth();
+        };
+        
+        // Периодически проверяем состояние сервера
+        setInterval(checkHealth, 30000); // каждые 30 секунд
+    </script>
+</body>
+</html> 

