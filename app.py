@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from flask_cors import CORS
 import json
 from datetime import datetime
@@ -1048,30 +1048,14 @@ def health_check():
         'allowed_origins': ALLOWED_ORIGINS
     })
 
-@app.route('/test')
-def test_page():
-    """Страница для тестирования API"""
-    return render_template('test.html')
 
-@app.route('/test-render')
-def test_render_page():
-    """Страница для тестирования CORS на Render"""
-    return app.send_static_file('test_render_cors.html')
-
-@app.route('/cloud-test')
-def cloud_test_page():
-    """Страница для тестирования облачного хостинга без Selenium"""
-    return render_template('cloud-test.html')
 
 @app.route('/fixed-login')
 def fixed_login_page():
     """Исправленная страница логина без localhost"""
     return render_template('fixed-login.html')
 
-@app.route('/redirect')
-def redirect_page():
-    """Страница-редирект на исправленную версию"""
-    return render_template('redirect.html')
+
 
 @app.route('/proxy-roblox', methods=['POST'])
 def proxy_roblox():
