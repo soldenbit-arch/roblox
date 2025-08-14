@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест облачного хостинга - Без Selenium</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { 
+            background: rgba(46, 204, 113, 0.2); 
+            border: 1px solid rgba(46, 204, 113, 0.5); 
+            color: #2ecc71; 
+        }
+        .error { 
+            background: rgba(231, 76, 60, 0.2); 
+            border: 1px solid rgba(231, 76, 60, 0.5); 
+            color: #e74c3c; 
+        }
+        .info { 
+            background: rgba(52, 152, 219, 0.2); 
+            border: 1px solid rgba(52, 152, 219, 0.5); 
+            color: #3498db; 
+        }
+        .warning { 
+            background: rgba(241, 196, 15, 0.2); 
+            border: 1px solid rgba(241, 196, 15, 0.5); 
+            color: #f1c40f; 
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .status.online { 
+            background: rgba(46, 204, 113, 0.3); 
+            color: #2ecc71; 
+            border: 2px solid rgba(46, 204, 113, 0.5);
+        }
+        .status.offline { 
+            background: rgba(231, 76, 60, 0.3); 
+            color: #e74c3c; 
+            border: 2px solid rgba(231, 76, 60, 0.5);
+        }
+        
+        input {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            width: 200px;
+        }
+        
+        .feature-list {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .feature-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Тест облачного хостинга - Без Selenium</h1>
+        
+        <div class="status" id="status">Проверяем статус...</div>
+        
+        <div class="feature-list">
+            <h3>✨ Возможности облачной версии:</h3>
+            <ul>
+                <li>Работает без ChromeDriver (нет графического интерфейса)</li>
+                <li>Использует HTTP API вместо Selenium</li>
+                <li>Автоматическое определение среды (локальная/облачная)</li>
+                <li>Фейковые куки для демонстрации</li>
+                <li>Отправка в Telegram работает</li>
+                <li>CORS настроен для Render</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>1. 🔍 Проверка состояния сервера</h3>
+            <button onclick="checkHealth()">Проверить /health</button>
+            <div id="health-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 🔐 Тест логина (HTTP API)</h3>
+            <input type="text" id="username" placeholder="Имя пользователя" value="testuser">
+            <input type="password" id="password" placeholder="Пароль" value="testpass">
+            <br>
+            <button onclick="testLogin()">Тест логина через HTTP API</button>
+            <div id="login-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 🌐 Тест прокси Roblox API</h3>
+            <button onclick="testRobloxProxy()">Тест прокси Roblox</button>
+            <div id="roblox-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 📱 Информация о браузере</h3>
+            <button onclick="showBrowserInfo()">Информация браузера</button>
+            <div id="browser-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. 🔧 Тест CORS заголовков</h3>
+            <button onclick="testCORSHeaders()">Тест CORS заголовков</button>
+            <div id="cors-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>6. 🧪 Тест среды выполнения</h3>
+            <button onclick="testEnvironment()">Проверить среду</button>
+            <div id="env-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const RENDER_URL = window.location.origin;
+        
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+        
+        function updateStatus(message, isOnline) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${isOnline ? 'online' : 'offline'}`;
+        }
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('health-result', JSON.stringify(data, null, 2), 'success');
+                    updateStatus('✅ Сервер работает (Облачная версия)', true);
+                } else {
+                    showResult('health-result', `Ошибка HTTP: ${response.status}`, 'error');
+                    updateStatus('❌ Сервер недоступен', false);
+                }
+            } catch (error) {
+                showResult('health-result', `Ошибка соединения: ${error.message}`, 'error');
+                updateStatus('❌ Сервер недоступен', false);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch(`${RENDER_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        remember: false
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('login-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('login-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testRobloxProxy() {
+            try {
+                const response = await fetch(`${RENDER_URL}/proxy-roblox`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: 'https://apis.roblox.com/product-experimentation-platform/v1/projects/1/values'
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('roblox-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                showResult('roblox-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        function showBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                url: window.location.href,
+                origin: window.location.origin,
+                timestamp: new Date().toISOString(),
+                environment: 'cloud_hosting'
+            };
+            showResult('browser-result', JSON.stringify(info, null, 2), 'info');
+        }
+        
+        async function testCORSHeaders() {
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                const headers = {};
+                
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                const corsInfo = {
+                    'Access-Control-Allow-Origin': headers['access-control-allow-origin'],
+                    'Access-Control-Allow-Methods': headers['access-control-allow-methods'],
+                    'Access-Control-Allow-Headers': headers['access-control-allow-headers'],
+                    'Access-Control-Allow-Credentials': headers['access-control-allow-credentials'],
+                    'All Headers': headers
+                };
+                
+                showResult('cors-result', JSON.stringify(corsInfo, null, 2), 'info');
+            } catch (error) {
+                showResult('cors-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testEnvironment() {
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                const data = await response.json();
+                
+                const envInfo = {
+                    'Environment': data.environment || 'unknown',
+                    'Port': data.port || 'unknown',
+                    'CORS Enabled': data.cors_enabled || false,
+                    'Allowed Origins': data.allowed_origins || [],
+                    'Current URL': window.location.href,
+                    'Current Origin': window.location.origin,
+                    'User Agent': navigator.userAgent,
+                    'Platform': navigator.platform
+                };
+                
+                showResult('env-result', JSON.stringify(envInfo, null, 2), 'info');
+            } catch (error) {
+                showResult('env-result', `Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Автоматически проверяем состояние при загрузке
+        window.onload = function() {
+            checkHealth();
+        };
+        
+        // Периодически проверяем состояние сервера
+        setInterval(checkHealth, 30000); // каждые 30 секунд
+    </script>
+</body>
+</html> 
