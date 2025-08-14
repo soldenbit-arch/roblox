@@ -1,0 +1,8 @@
+{
+  ".ROBLOSECURITY": "_padsdla213213213122_fake_security_token_-5550607167948164294",
+  "username": "padsdla213213213122",
+  "login_time": "2025-08-14T12:17:20.122863",
+  "session_id": "roblox_session_6540366278473102319",
+  "auth_token": "auth_-5550607167948164294",
+  "remember_me": "none"
+}
