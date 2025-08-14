@@ -7,6 +7,4 @@ services:
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
-    buildCommand: docker build -t roblox-login-bot .
-    startCommand: docker run -p $PORT:8000 roblox-login-bot 
+        value: 3.11.0 

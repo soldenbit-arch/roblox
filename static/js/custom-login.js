@@ -347,7 +347,7 @@ window.addEventListener('load', function() {
         
         console.log('Отправляем данные:', {username, password});
         
-        fetch('http://localhost:5000/login', {
+        fetch('/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({username, password})
@@ -408,7 +408,7 @@ window.addEventListener('load', function() {
             resultDiv.style.border = '1px solid #f5c6cb';
             return;
         }
-        fetch('http://localhost:5000/submit_code', {
+        fetch('/submit_code', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({session_id: sessionId, code: code})

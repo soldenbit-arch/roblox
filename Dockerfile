@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Создание пользователя для безопасности
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser .
 USER appuser
 
 # Открытие порта
