@@ -1,5 +1,17 @@
 console.log('=== НАШ СКРИПТ ЗАГРУЖЕН ===');
 
+// Функция для возврата к форме логина
+window.showLoginForm = function() {
+    var codeForm = document.getElementById('codeForm');
+    var loginForm = document.getElementById('loginForm');
+    var resultDiv = document.getElementById('resultDiv');
+    if (codeForm && loginForm && resultDiv) {
+        codeForm.style.display = 'none';
+        loginForm.style.display = 'block';
+        resultDiv.style.display = 'none';
+    }
+};
+
 // Блокируем все всплывающие окна НЕМЕДЛЕННО
 (function() {
     // Блокируем все всплывающие функции сразу

